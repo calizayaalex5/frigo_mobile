@@ -2,10 +2,12 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
+    Alert,
     FlatList,
     Platform,
     Pressable,
     StyleSheet,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -22,6 +24,19 @@ const ROLE_LABELS: Record<string, string> = {
   seller: "Seller",
   warehouse: "Warehouse",
 };
+
+// Alert.alert with buttons does not work on web, so web uses window.confirm.
+function confirmAction(message: string): Promise<boolean> {
+  if (Platform.OS === "web") {
+    return Promise.resolve(window.confirm(message));
+  }
+  return new Promise((resolve) => {
+    Alert.alert("Confirm", message, [
+      { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+      { text: "Delete", style: "destructive", onPress: () => resolve(true) },
+    ]);
+  });
+}
 
 export default function StaffScreen() {
   const [users, setUsers] = useState<StaffUser[]>([]);
@@ -65,6 +80,47 @@ export default function StaffScreen() {
     }
   }
 
+  async function deleteUser(user: StaffUser) {
+    if (user._id === myId) return;
+    setError("");
+
+    const confirmed = await confirmAction(
+      `Delete ${user.email}? They will no longer be able to log in.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_URL}/users/${user._id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.message ?? "Could not delete the user");
+        return;
+      }
+
+      setUsers((prev) => prev.filter((u) => u._id !== user._id));
+    } catch (e) {
+      console.log("Delete user error:", e);
+      setError("Cannot reach the server");
+    }
+  }
+
+  function editUser(user: StaffUser) {
+    router.push({
+      pathname: "/staff-form",
+      params: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        self: user._id === myId ? "1" : "0",
+      },
+    });
+  }
+
   useEffect(() => {
     getUserId().then(setMyId);
   }, []);
@@ -98,6 +154,23 @@ export default function StaffScreen() {
               <ThemedText type="small">
                 Role: {ROLE_LABELS[item.role] ?? item.role}
               </ThemedText>
+
+              <View style={styles.actions}>
+                <Pressable
+                  style={[styles.smallButton, styles.editButton]}
+                  onPress={() => editUser(item)}
+                >
+                  <ThemedText style={styles.buttonText}>Edit</ThemedText>
+                </Pressable>
+                {item._id !== myId && (
+                  <Pressable
+                    style={[styles.smallButton, styles.deleteButton]}
+                    onPress={() => deleteUser(item)}
+                  >
+                    <ThemedText style={styles.buttonText}>Delete</ThemedText>
+                  </Pressable>
+                )}
+              </View>
             </ThemedView>
           )}
         />
@@ -134,6 +207,19 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     gap: Spacing.one,
   },
+  actions: {
+    flexDirection: "row",
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+  },
+  smallButton: {
+    flex: 1,
+    borderRadius: 8,
+    padding: 10,
+    alignItems: "center",
+  },
+  editButton: { backgroundColor: "#4b5563" },
+  deleteButton: { backgroundColor: "#b91c1c" },
   button: {
     backgroundColor: "#2563eb",
     borderRadius: 8,

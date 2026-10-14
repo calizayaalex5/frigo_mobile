@@ -21,13 +21,13 @@ type Product = {
   _id: string;
   name: string;
   price?: number;
-  cost?: number; // only present for roles allowed to see it
+  cost?: number;
   stock?: StockEntry[];
 };
 type Sale = { _id: string; total: number };
 
 const STORES = ["Manuel Bulnes", "Barros Arana"];
-// A store is flagged when a product has this many units or fewer in it.
+
 const LOW_STOCK_THRESHOLD = 3;
 
 const ROLE_LABELS: Record<string, string> = {
@@ -46,7 +46,6 @@ function money(n: number) {
   );
 }
 
-// Optional lookups: if the role is not allowed to read them, return null.
 async function fetchOptional(url: string, headers: Record<string, string>) {
   try {
     const response = await fetch(url, { headers });
@@ -125,7 +124,6 @@ export default function HomeScreen() {
     }, []),
   );
 
-  // ---- numbers shown in the cards ----
   const unitsByStore = STORES.map((store) => ({
     store,
     units: (products ?? []).reduce(
@@ -164,7 +162,6 @@ export default function HomeScreen() {
 
   const salesTotal = (sales ?? []).reduce((sum, s) => sum + s.total, 0);
 
-  // ---- quick actions, by role ----
   const actions = [
     {
       label: "Clients",

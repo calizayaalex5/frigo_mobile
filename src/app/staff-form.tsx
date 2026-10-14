@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
     Pressable,
@@ -15,7 +15,7 @@ import { API_URL } from "@/constants/api";
 import { Spacing } from "@/constants/theme";
 import { getToken } from "@/lib/auth";
 
-// Roles accepted by the backend's createUser.
+// Roles accepted by the backend for staff accounts.
 const ROLES = [
   { value: "seller", label: "Seller" },
   { value: "warehouse", label: "Warehouse" },
@@ -23,9 +23,18 @@ const ROLES = [
 ];
 
 export default function StaffFormScreen() {
-  const [email, setEmail] = useState("");
+  const params = useLocalSearchParams<{
+    id?: string;
+    email?: string;
+    role?: string;
+    self?: string;
+  }>();
+  const isEdit = !!params.id;
+  const isSelf = params.self === "1";
+
+  const [email, setEmail] = useState(params.email ?? "");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(params.role ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -36,8 +45,12 @@ export default function StaffFormScreen() {
       setError("Enter a valid email");
       return;
     }
-    if (password.length < 6) {
+    if (!isEdit && password.length < 6) {
       setError("The password must have at least 6 characters");
+      return;
+    }
+    if (isEdit && password !== "" && password.length < 6) {
+      setError("The new password must have at least 6 characters");
       return;
     }
     if (role === "") {
@@ -45,21 +58,26 @@ export default function StaffFormScreen() {
       return;
     }
 
+    const body: Record<string, string> = { email: email.trim(), role };
+    if (!isEdit || password !== "") body.password = password;
+
     setSaving(true);
     try {
       const token = await getToken();
-      const response = await fetch(`${API_URL}/users`, {
-        method: "POST",
+      const url = isEdit ? `${API_URL}/users/${params.id}` : `${API_URL}/users`;
+
+      const response = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ email: email.trim(), password, role }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
       if (!response.ok) {
-        setError(data.message ?? "Could not create the user");
+        setError(data.message ?? "Could not save the user");
         return;
       }
 
@@ -77,7 +95,7 @@ export default function StaffFormScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.form}>
           <ThemedText type="title" style={styles.title}>
-            Add staff user
+            {isEdit ? "Edit staff user" : "Add staff user"}
           </ThemedText>
 
           <TextInput
@@ -91,7 +109,9 @@ export default function StaffFormScreen() {
           />
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder={
+              isEdit ? "New password (leave empty to keep)" : "Password"
+            }
             placeholderTextColor="#888"
             value={password}
             onChangeText={setPassword}
@@ -103,8 +123,13 @@ export default function StaffFormScreen() {
             {ROLES.map((r) => (
               <Pressable
                 key={r.value}
+                disabled={isSelf}
                 onPress={() => setRole(r.value)}
-                style={[styles.chip, role === r.value && styles.chipSelected]}
+                style={[
+                  styles.chip,
+                  role === r.value && styles.chipSelected,
+                  isSelf && styles.disabled,
+                ]}
               >
                 <ThemedText type="small" style={styles.chipText}>
                   {r.label}
@@ -112,6 +137,11 @@ export default function StaffFormScreen() {
               </Pressable>
             ))}
           </View>
+          {isSelf && (
+            <ThemedText type="small">
+              You cannot change your own role.
+            </ThemedText>
+          )}
 
           {error !== "" && <ThemedText>{error}</ThemedText>}
 
@@ -121,7 +151,7 @@ export default function StaffFormScreen() {
             disabled={saving}
           >
             <ThemedText style={styles.buttonText}>
-              {saving ? "Saving..." : "Create user"}
+              {saving ? "Saving..." : isEdit ? "Save changes" : "Create user"}
             </ThemedText>
           </Pressable>
 
