@@ -45,7 +45,7 @@ I wanted to practice building a complete mobile client on top of an API: authent
 - [Expo Router - Native tabs](https://docs.expo.dev/router/advanced/native-tabs/)
 - [React Native Documentation](https://reactnative.dev)
 - [Async Storage](https://react-native-async-storage.github.io/async-storage/)
-- [Curso REACT NATIVE para Principiantes + Aplicación DESDE CERO con Expo] (https://youtu.be/U23lNFm_J70?si=k2SZ1kvURXdq-TEc)
+- [Curso REACT NATIVE para Principiantes + Aplicación DESDE CERO con Expo](https://www.youtube.com/watch?v=U23lNFm_J70&t=1725s/)
 
 # Future Work
 
