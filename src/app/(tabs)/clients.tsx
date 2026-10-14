@@ -1,13 +1,13 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Platform,
-    Pressable,
-    StyleSheet,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -207,10 +207,6 @@ export default function ClientsScreen() {
             <ThemedText style={styles.buttonText}>Add client</ThemedText>
           </Pressable>
         )}
-
-        <Pressable style={styles.button} onPress={() => router.back()}>
-          <ThemedText style={styles.buttonText}>Back</ThemedText>
-        </Pressable>
       </SafeAreaView>
     </ThemedView>
   );

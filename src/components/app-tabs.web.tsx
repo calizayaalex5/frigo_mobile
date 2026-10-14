@@ -13,7 +13,11 @@ import { ThemedView } from "./themed-view";
 
 import { MaxContentWidth, Spacing } from "@/constants/theme";
 
-export default function AppTabs() {
+export default function AppTabs({ role }: { role: string }) {
+  const canSeeClients = role === "boss" || role === "seller";
+  const canSeeSales =
+    role === "boss" || role === "seller" || role === "customer";
+
   return (
     <Tabs>
       <TabSlot style={{ height: "100%" }} />
@@ -22,6 +26,18 @@ export default function AppTabs() {
           <TabTrigger name="home" href="/" asChild>
             <TabButton>Home</TabButton>
           </TabTrigger>
+          {canSeeClients && (
+            <TabTrigger name="clients" href="/clients" asChild>
+              <TabButton>Clients</TabButton>
+            </TabTrigger>
+          )}
+          {canSeeSales && (
+            <TabTrigger name="sales" href="/sales" asChild>
+              <TabButton>
+                {role === "customer" ? "My purchases" : "Sales"}
+              </TabButton>
+            </TabTrigger>
+          )}
         </CustomTabList>
       </TabList>
     </Tabs>

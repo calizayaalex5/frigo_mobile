@@ -1,11 +1,10 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Platform,
-    Pressable,
-    StyleSheet,
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  StyleSheet
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -164,10 +163,6 @@ export default function SalesScreen() {
             </ThemedView>
           )}
         />
-
-        <Pressable style={styles.button} onPress={() => router.back()}>
-          <ThemedText style={styles.buttonText}>Back</ThemedText>
-        </Pressable>
       </SafeAreaView>
     </ThemedView>
   );
