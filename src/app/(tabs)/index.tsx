@@ -2,10 +2,11 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -20,41 +21,94 @@ type Product = {
   _id: string;
   name: string;
   price?: number;
-  cost?: number;
+  cost?: number; // only present for roles allowed to see it
   stock?: StockEntry[];
 };
+type Sale = { _id: string; total: number };
 
-export default function ProductsScreen() {
-  const [products, setProducts] = useState<Product[]>([]);
+const STORES = ["Manuel Bulnes", "Barros Arana"];
+// A store is flagged when a product has this many units or fewer in it.
+const LOW_STOCK_THRESHOLD = 3;
+
+const ROLE_LABELS: Record<string, string> = {
+  boss: "Boss",
+  seller: "Seller",
+  warehouse: "Warehouse",
+  customer: "Customer",
+};
+
+function money(n: number) {
+  return (
+    "$" +
+    Math.round(n)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+  );
+}
+
+// Optional lookups: if the role is not allowed to read them, return null.
+async function fetchOptional(url: string, headers: Record<string, string>) {
+  try {
+    const response = await fetch(url, { headers });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+function StatCard({
+  label,
+  value,
+  lines,
+}: {
+  label: string;
+  value: string;
+  lines?: string[];
+}) {
+  return (
+    <ThemedView type="backgroundElement" style={styles.statCard}>
+      <ThemedText type="small">{label}</ThemedText>
+      <ThemedText type="subtitle">{value}</ThemedText>
+      {lines?.map((line) => (
+        <ThemedText key={line} type="small">
+          {line}
+        </ThemedText>
+      ))}
+    </ThemedView>
+  );
+}
+
+export default function HomeScreen() {
+  const [role, setRole] = useState("");
+  const [products, setProducts] = useState<Product[] | null>(null);
+  const [sales, setSales] = useState<Sale[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [role, setRole] = useState("");
 
   async function logout() {
     await clearToken();
     router.replace("/login");
   }
 
-  async function loadProducts() {
+  async function loadData() {
     try {
       const token = await getToken();
-      const response = await fetch(`${API_URL}/products`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const headers = { Authorization: `Bearer ${token}` };
 
-      if (response.status === 401) {
+      const productsRes = await fetch(`${API_URL}/products`, { headers });
+      if (productsRes.status === 401) {
         await logout();
         return;
       }
+      setProducts(productsRes.ok ? await productsRes.json() : null);
 
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.message ?? "Could not load products");
-        return;
-      }
-      setProducts(data);
+      const salesData = await fetchOptional(`${API_URL}/sales`, headers);
+      setSales(Array.isArray(salesData) ? salesData : null);
+
+      setError("");
     } catch (e) {
-      console.log("Products error:", e);
+      console.log("Home error:", e);
       setError("Cannot reach the server");
     } finally {
       setLoading(false);
@@ -67,114 +121,161 @@ export default function ProductsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadProducts();
+      loadData();
     }, []),
   );
+
+  // ---- numbers shown in the cards ----
+  const unitsByStore = STORES.map((store) => ({
+    store,
+    units: (products ?? []).reduce(
+      (sum, p) =>
+        sum + (p.stock?.find((s) => s.store === store)?.quantity ?? 0),
+      0,
+    ),
+  }));
+  const totalUnits = unitsByStore.reduce((sum, s) => sum + s.units, 0);
+
+  // Only meaningful for roles that receive "cost" (the boss).
+  const productsWithCost = (products ?? []).filter((p) => p.cost !== undefined);
+  const inventoryValue = productsWithCost.reduce(
+    (sum, p) =>
+      sum +
+      (p.cost ?? 0) *
+        (p.stock ?? []).reduce((units, s) => units + s.quantity, 0),
+    0,
+  );
+  const margins = productsWithCost
+    .filter((p) => (p.price ?? 0) > 0)
+    .map((p) => ((p.price! - p.cost!) / p.price!) * 100);
+  const averageMargin =
+    margins.length > 0
+      ? margins.reduce((a, b) => a + b, 0) / margins.length
+      : null;
+
+  const lowStock: { name: string; store: string; quantity: number }[] = [];
+  for (const p of products ?? []) {
+    for (const s of p.stock ?? []) {
+      if (s.quantity <= LOW_STOCK_THRESHOLD) {
+        lowStock.push({ name: p.name, store: s.store, quantity: s.quantity });
+      }
+    }
+  }
+
+  const salesTotal = (sales ?? []).reduce((sum, s) => sum + s.total, 0);
+
+  // ---- quick actions, by role ----
+  const actions = [
+    {
+      label: "Clients",
+      path: "/clients",
+      roles: ["boss", "seller"],
+    },
+    {
+      label: "Staff",
+      path: "/staff",
+      roles: ["boss"],
+    },
+    {
+      label: "Products",
+      path: "/products",
+      roles: ["boss", "seller", "warehouse", "customer"],
+    },
+    { label: "New sale", path: "/new-sale", roles: ["boss", "seller"] },
+    {
+      label: role === "customer" ? "My purchases" : "Sales",
+      path: "/sales",
+      roles: ["boss", "seller", "customer"],
+    },
+  ].filter((a) => a.roles.includes(role));
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="title" style={styles.title}>
-          Products
-        </ThemedText>
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.header}>
+            <ThemedText type="title">Home</ThemedText>
+            {role !== "" && (
+              <View style={styles.badge}>
+                <ThemedText type="smallBold" style={styles.badgeText}>
+                  {ROLE_LABELS[role] ?? role}
+                </ThemedText>
+              </View>
+            )}
+          </View>
 
-        {role !== "" && (
-          <ThemedText type="small" style={styles.title}>
-            Role: {role}
-          </ThemedText>
-        )}
+          {loading && <ActivityIndicator />}
+          {error !== "" && <ThemedText>{error}</ThemedText>}
 
-        {loading && <ActivityIndicator />}
-        {error !== "" && <ThemedText>{error}</ThemedText>}
+          {products !== null && (
+            <View style={styles.grid}>
+              <StatCard
+                label="Total stock"
+                value={`${totalUnits} units`}
+                lines={unitsByStore.map((s) => `${s.store}: ${s.units}`)}
+              />
 
-        <FlatList
-          data={products}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <Pressable
-              disabled={role !== "boss"}
-              onPress={() =>
-                router.push({
-                  pathname: "/edit-product",
-                  params: {
-                    id: item._id,
-                    name: item.name,
-                    price: String(item.price ?? ""),
-                    cost: String(item.cost ?? ""),
-                    bulnes: String(
-                      item.stock?.find((s) => s.store === "Manuel Bulnes")
-                        ?.quantity ?? 0,
-                    ),
-                    barros: String(
-                      item.stock?.find((s) => s.store === "Barros Arana")
-                        ?.quantity ?? 0,
-                    ),
-                  },
-                })
-              }
-            >
-              <ThemedView type="backgroundElement" style={styles.card}>
-                <ThemedText type="smallBold">{item.name}</ThemedText>
-                {item.price !== undefined && (
-                  <ThemedText>Price: ${item.price}</ThemedText>
-                )}
-                {item.cost !== undefined && (
-                  <ThemedText>Cost: ${item.cost}</ThemedText>
-                )}
-                {item.stock?.map((s) => (
-                  <ThemedText key={s.store} type="small">
-                    {s.store}: {s.quantity}
-                  </ThemedText>
-                ))}
-                {role === "boss" && (
-                  <ThemedText type="small">Tap to edit</ThemedText>
-                )}
-              </ThemedView>
-            </Pressable>
+              {role === "boss" && productsWithCost.length > 0 && (
+                <StatCard
+                  label="Inventory value (at cost)"
+                  value={money(inventoryValue)}
+                  lines={
+                    averageMargin !== null
+                      ? [`Avg. margin: ${averageMargin.toFixed(0)}%`]
+                      : []
+                  }
+                />
+              )}
+
+              {sales !== null && (
+                <StatCard
+                  label={role === "customer" ? "My purchases" : "Sales"}
+                  value={String(sales.length)}
+                  lines={[`Total: ${money(salesTotal)}`]}
+                />
+              )}
+
+              <StatCard
+                label="Low stock"
+                value={`${lowStock.length} alerts`}
+                lines={[`${LOW_STOCK_THRESHOLD} units or fewer in a store`]}
+              />
+            </View>
           )}
-        />
 
-        {(role === "boss" || role === "seller" || role === "customer") && (
-          <Pressable
-            style={styles.button}
-            onPress={() => router.push("/sales")}
-          >
-            <ThemedText style={styles.buttonText}>
-              {role === "customer" ? "My purchases" : "Sales"}
-            </ThemedText>
-          </Pressable>
-        )}
-        {(role === "boss" || role === "seller") && (
-          <Pressable
-            style={styles.button}
-            onPress={() => router.push("/new-sale")}
-          >
-            <ThemedText style={styles.buttonText}>New sale</ThemedText>
-          </Pressable>
-        )}
+          {lowStock.length > 0 && (
+            <ThemedView type="backgroundElement" style={styles.alertBox}>
+              <ThemedText type="smallBold">Low stock alerts</ThemedText>
+              {lowStock.slice(0, 5).map((a) => (
+                <ThemedText key={`${a.name}-${a.store}`} type="small">
+                  {a.name} — {a.store}: {a.quantity}
+                </ThemedText>
+              ))}
+              {lowStock.length > 5 && (
+                <ThemedText type="small">
+                  and {lowStock.length - 5} more...
+                </ThemedText>
+              )}
+            </ThemedView>
+          )}
 
-        {(role === "boss" || role === "seller") && (
-          <Pressable
-            style={styles.button}
-            onPress={() => router.push("/clients")}
-          >
-            <ThemedText style={styles.buttonText}>Clients</ThemedText>
-          </Pressable>
-        )}
+          <ThemedText type="smallBold">Quick actions</ThemedText>
+          <View style={styles.grid}>
+            {actions.map((a) => (
+              <Pressable
+                key={a.path}
+                style={styles.tile}
+                onPress={() => router.push(a.path as any)}
+              >
+                <ThemedText style={styles.buttonText}>{a.label}</ThemedText>
+              </Pressable>
+            ))}
+          </View>
 
-        {role === "boss" && (
-          <Pressable
-            style={styles.button}
-            onPress={() => router.push("/add-product")}
-          >
-            <ThemedText style={styles.buttonText}>Add product</ThemedText>
+          <Pressable style={styles.logoutButton} onPress={logout}>
+            <ThemedText style={styles.buttonText}>Log out</ThemedText>
           </Pressable>
-        )}
-
-        <Pressable style={styles.button} onPress={logout}>
-          <ThemedText style={styles.buttonText}>Log out</ThemedText>
-        </Pressable>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -187,22 +288,46 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 600,
     paddingHorizontal: Spacing.four,
-    paddingTop: Platform.OS === "web" ? 96 : Spacing.three,
-    gap: Spacing.three,
+    // removed paddingTop from here
   },
-  title: { textAlign: "center" },
-  list: { gap: Spacing.two },
-  card: {
+  content: {
+    gap: Spacing.three,
+    paddingBottom: Spacing.four,
+    paddingTop: Platform.OS === "web" ? 96 : Spacing.three,
+  },
+  badge: {
+    backgroundColor: "#2563eb",
+    borderRadius: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  badgeText: { color: "#fff" },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.two },
+  statCard: {
+    flexBasis: "47%",
+    flexGrow: 1,
     padding: Spacing.three,
     borderRadius: Spacing.three,
     gap: Spacing.one,
   },
-  button: {
+  alertBox: {
+    padding: Spacing.three,
+    borderRadius: Spacing.three,
+    gap: Spacing.one,
+  },
+  tile: {
+    flexBasis: "47%",
+    flexGrow: 1,
     backgroundColor: "#2563eb",
+    borderRadius: 12,
+    paddingVertical: 22,
+    alignItems: "center",
+  },
+  logoutButton: {
+    backgroundColor: "#4b5563",
     borderRadius: 8,
     padding: 14,
     alignItems: "center",
-    marginBottom: Spacing.three,
   },
   buttonText: { color: "#fff", fontWeight: "bold" },
 });
