@@ -292,6 +292,11 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.four,
     paddingTop: Platform.OS === "web" ? 96 : Spacing.three,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   badge: {
     backgroundColor: "#2563eb",
     borderRadius: 14,
