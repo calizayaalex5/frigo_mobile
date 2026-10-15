@@ -9,6 +9,7 @@ import { API_URL } from "@/constants/api";
 import { Spacing } from "@/constants/theme";
 import { getToken } from "@/lib/auth";
 
+// Form for the boss to create a new product with its price, cost and stock per store.
 export default function AddProductScreen() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -18,6 +19,7 @@ export default function AddProductScreen() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Validates the form and sends the new product to the API.
   async function handleSave() {
     setError("");
 

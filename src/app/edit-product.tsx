@@ -9,6 +9,7 @@ import { API_URL } from "@/constants/api";
 import { Spacing } from "@/constants/theme";
 import { getToken } from "@/lib/auth";
 
+// Form for the boss to edit an existing product, pre-filled with its current data.
 export default function EditProductScreen() {
   const params = useLocalSearchParams<{
     id: string;
@@ -27,6 +28,7 @@ export default function EditProductScreen() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Validates the form and sends the updated product to the API.
   async function handleSave() {
     setError("");
 

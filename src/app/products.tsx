@@ -1,11 +1,11 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Platform,
-    Pressable,
-    StyleSheet,
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -24,17 +24,20 @@ type Product = {
   stock?: StockEntry[];
 };
 
+// Products screen: lists products with the fields the user's role can see.
 export default function ProductsScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [role, setRole] = useState("");
 
+  // Deletes the saved token and returns to the login screen.
   async function logout() {
     await clearToken();
     router.replace("/login");
   }
 
+  // Loads the product list from the API.
   async function loadProducts() {
     try {
       const token = await getToken();

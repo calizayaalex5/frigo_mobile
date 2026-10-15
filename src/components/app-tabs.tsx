@@ -3,6 +3,7 @@ import { useColorScheme } from "react-native";
 
 import { Colors } from "@/constants/theme";
 
+// Tab bar with Home, Clients and Sales; tabs are shown according to the user's role.
 export default function AppTabs({ role }: { role: string }) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === "unspecified" ? "light" : scheme];

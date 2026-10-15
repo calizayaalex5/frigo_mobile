@@ -37,6 +37,7 @@ const ROLE_LABELS: Record<string, string> = {
   customer: "Customer",
 };
 
+// Formats a number as money with thousands separators (e.g. $14.530.000).
 function money(n: number) {
   return (
     "$" +
@@ -46,6 +47,7 @@ function money(n: number) {
   );
 }
 
+// Fetches data that the user's role may not be allowed to read; returns null if it fails.
 async function fetchOptional(url: string, headers: Record<string, string>) {
   try {
     const response = await fetch(url, { headers });
@@ -56,6 +58,7 @@ async function fetchOptional(url: string, headers: Record<string, string>) {
   }
 }
 
+// Card that shows a label, a main value and optional detail lines.
 function StatCard({
   label,
   value,
@@ -78,6 +81,7 @@ function StatCard({
   );
 }
 
+// Home screen: shows a business summary and quick actions for the user's role.
 export default function HomeScreen() {
   const [role, setRole] = useState("");
   const [products, setProducts] = useState<Product[] | null>(null);
@@ -85,11 +89,13 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Deletes the saved token and returns to the login screen.
   async function logout() {
     await clearToken();
     router.replace("/login");
   }
 
+  // Loads products and sales from the API to calculate the summary cards.
   async function loadData() {
     try {
       const token = await getToken();

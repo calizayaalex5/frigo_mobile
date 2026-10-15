@@ -6,6 +6,7 @@ import { AnimatedSplashOverlay } from "@/components/animated-icon";
 
 SplashScreen.preventAutoHideAsync();
 
+// Root layout: applies the color theme and shows each screen in a stack.
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (

@@ -1,11 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    View,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -22,6 +22,7 @@ const ROLES = [
   { value: "boss", label: "Boss" },
 ];
 
+// Form to create a staff account or edit one (email, password and role).
 export default function StaffFormScreen() {
   const params = useLocalSearchParams<{
     id?: string;
@@ -38,6 +39,7 @@ export default function StaffFormScreen() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Validates the form and creates or updates the staff account through the API
   async function handleSave() {
     setError("");
 

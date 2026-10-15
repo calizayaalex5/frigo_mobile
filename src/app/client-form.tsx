@@ -1,11 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    TextInputProps,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TextInputProps,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -15,15 +15,18 @@ import { API_URL } from "@/constants/api";
 import { Spacing } from "@/constants/theme";
 import { getToken } from "@/lib/auth";
 
+// Text input with the shared form style.
 function FormInput(props: TextInputProps) {
   return (
     <TextInput style={styles.input} placeholderTextColor="#888" {...props} />
   );
 }
 
+// Turns an empty text into null so optional fields are saved as empty.
 const emptyToNull = (value: string) =>
   value.trim() === "" ? null : value.trim();
 
+// Form to create a new client (with their login) or edit an existing one.
 export default function ClientFormScreen() {
   const params = useLocalSearchParams<{
     id?: string;
@@ -59,6 +62,7 @@ export default function ClientFormScreen() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Validates the form and creates or updates the client through the API.
   async function handleSave() {
     setError("");
 

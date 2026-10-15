@@ -4,7 +4,7 @@ import {
   ActivityIndicator,
   FlatList,
   Platform,
-  StyleSheet
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -54,11 +54,13 @@ async function fetchOptional(url: string, headers: Record<string, string>) {
   }
 }
 
+// Converts a date from the API into the phone's local date and time.
 function formatDate(value: string) {
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
 }
 
+// Sales screen: shows the sales history allowed for the user's role.
 export default function SalesScreen() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [clientNames, setClientNames] = useState<Record<string, string>>({});
@@ -66,6 +68,7 @@ export default function SalesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Loads the sales and the client and product names to display them
   async function loadSales() {
     try {
       const token = await getToken();

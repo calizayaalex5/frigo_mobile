@@ -58,12 +58,14 @@ function confirmAction(message: string): Promise<boolean> {
   });
 }
 
+// Clients screen: lists clients; the boss can also edit and delete them.
 export default function ClientsScreen() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [role, setRole] = useState("");
 
+  // Loads the client list from the API.
   async function loadClients() {
     try {
       const token = await getToken();
@@ -92,6 +94,7 @@ export default function ClientsScreen() {
     }
   }
 
+  // Asks for confirmation and deletes a client (and their login) through the API.
   async function deleteClient(client: Client) {
     setError("");
     const confirmed = await confirmAction(
@@ -119,6 +122,7 @@ export default function ClientsScreen() {
     }
   }
 
+  // Opens the client form with the client's current data to edit it.
   function editClient(client: Client) {
     router.push({
       pathname: "/client-form",

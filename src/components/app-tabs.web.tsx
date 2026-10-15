@@ -13,6 +13,7 @@ import { ThemedView } from "./themed-view";
 
 import { MaxContentWidth, Spacing } from "@/constants/theme";
 
+// Tab bar with Home, Clients and Sales; tabs are shown according to the user's role.
 export default function AppTabs({ role }: { role: string }) {
   const canSeeClients = role === "boss" || role === "seller";
   const canSeeSales =

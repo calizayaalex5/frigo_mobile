@@ -1,12 +1,12 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -46,6 +46,7 @@ const PAYMENT_METHODS = [
   { value: "credit_card", label: "Credit card" },
 ];
 
+// Selectable option button used to pick a client, store or payment type.
 function Chip({
   label,
   selected,
@@ -67,6 +68,7 @@ function Chip({
   );
 }
 
+// New sale screen: choose a client, store, products and payment type.
 export default function NewSaleScreen() {
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -83,6 +85,7 @@ export default function NewSaleScreen() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Loads the clients and products needed to build the sale.
     async function load() {
       try {
         const token = await getToken();
@@ -127,6 +130,7 @@ export default function NewSaleScreen() {
     return sum + (Number.isFinite(qty) ? qty * (p.price ?? 0) : 0);
   }, 0);
 
+  // Validates the sale and sends it to the API, which discounts the stock.
   async function handleSave() {
     setError("");
 

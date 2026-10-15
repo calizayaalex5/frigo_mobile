@@ -9,11 +9,13 @@ import { API_URL } from "@/constants/api";
 import { Spacing } from "@/constants/theme";
 import { saveToken } from "@/lib/auth";
 
+// Login screen: lets the user enter their email and password.
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // Login screen: lets the user enter their email and password.
   async function handleLogin() {
     setError("");
     try {

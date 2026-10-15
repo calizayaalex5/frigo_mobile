@@ -1,13 +1,13 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Platform,
-    Pressable,
-    StyleSheet,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -38,12 +38,14 @@ function confirmAction(message: string): Promise<boolean> {
   });
 }
 
+// Staff screen: lets the boss see, add, edit and delete staff accounts.
 export default function StaffScreen() {
   const [users, setUsers] = useState<StaffUser[]>([]);
   const [myId, setMyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Loads the staff accounts from the API (clients are managed in the Clients tab).
   async function loadUsers() {
     try {
       const token = await getToken();
@@ -80,6 +82,7 @@ export default function StaffScreen() {
     }
   }
 
+  // Asks for confirmation and deletes a staff account (the boss cannot delete themselves)
   async function deleteUser(user: StaffUser) {
     if (user._id === myId) return;
     setError("");
@@ -109,6 +112,7 @@ export default function StaffScreen() {
     }
   }
 
+  // Opens the staff form with the user's current data to edit it.
   function editUser(user: StaffUser) {
     router.push({
       pathname: "/staff-form",
