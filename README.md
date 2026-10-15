@@ -20,7 +20,7 @@ The app does not decide what each role is allowed to see or do. The backend filt
 
 I wanted to practice building a complete mobile client on top of an API: authentication with JSON Web Tokens, role-based screens and navigation, local persistence of the session, forms that create, edit and delete data, and clear handling of the errors returned by the server.
 
-[Software Demo Video](http://youtube.link.goes.here)
+[Software Demo Video](https://youtu.be/VU4BztYagsI)
 
 # Development Environment
 
