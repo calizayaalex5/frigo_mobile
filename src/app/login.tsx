@@ -15,7 +15,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  // Login screen: lets the user enter their email and password.
+  // Sends the credentials to the API, saves the token and opens the Home screen
   async function handleLogin() {
     setError("");
     try {
